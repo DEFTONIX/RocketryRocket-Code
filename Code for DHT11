@@ -1,0 +1,39 @@
+#include <DHT.h>
+
+//Announcement of entrances
+#define DHTpin ... // Maybe 4 
+#define DHTtype DHT11
+
+//Sensor announcement
+DHT dht(DHTpin,DHTtype);
+
+void setup()
+{
+  //Set the port monitor speed
+  Serial.begin(9600);
+
+  //Sensor initialization
+  dht.begin();
+}
+
+void loop()
+{
+  //Delay
+  delay(2000);
+
+  //Reading parameters
+  float humidity = dht.readHumidity();
+  float temperature = dht.readTemperature();
+
+  //Accessibility check
+  if (isnan(humidity)||isnan(temperature)) 
+  {
+    Serial.println("Reading error");
+  }
+
+  //Output of results
+  Serial.print("Humidity: ");
+  Serial.println(humidity);
+  Serial.print("Temperature: ");
+  Serial.println(temperature);
+}
