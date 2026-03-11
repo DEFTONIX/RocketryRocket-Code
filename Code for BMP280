@@ -1,0 +1,35 @@
+#include <Wire.h>
+#include <Adafruit_BMP280.h>
+
+//Sensor announcement
+Adafruit_BMP280 bmp;
+
+void setup() {
+  //Set the port monitor speed
+  Serial.begin(115200);
+
+  //I2C initialization
+  Wire.begin(21, 22);
+
+  //Sensor initialization
+  bmp.begin(0x76);
+}
+
+void loop() {
+
+  //Reading parameters
+  float BMPtemperature = bmp.readTemperature();
+  float pressure = bmp.readPressure();
+  
+  //Accessibility chek
+  if (isnan(bmp.readTemperature()) || isnan(bmp.readPressure()))
+  {
+    Serial.println("Error!"); 
+  }
+
+  //Output of results
+  Serial.println("Temperature: " + String(BMPtemperature) +" C "+ "Pressure " + String(pressure/100)+" hPa");
+
+  //Delay
+  delay(50);
+}
