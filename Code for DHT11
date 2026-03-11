@@ -23,10 +23,10 @@ void loop()
 
   //Reading parameters
   float humidity = dht.readHumidity();
-  float temperature = dht.readTemperature();
+  float DHTtemperature = dht.readTemperature();
 
   //Accessibility check
-  if (isnan(humidity)||isnan(temperature)) 
+  if (isnan(humidity)||isnan(DHTtemperature)) 
   {
     Serial.println("Reading error");
   }
@@ -35,5 +35,5 @@ void loop()
   Serial.print("Humidity: ");
   Serial.println(humidity);
   Serial.print("Temperature: ");
-  Serial.println(temperature);
+  Serial.println(DHTtemperature);
 }
