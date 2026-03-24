@@ -1,0 +1,70 @@
+#include <Wire.h>
+#include <SparkFun_ADXL345.h>
+#include <math.h>
+
+// Создание обьекта 
+ADXL345 adxl;
+
+void setup() {
+  Serial.begin(115200);
+  Wire.begin(21, 22);
+  
+  // Проверка датчика
+  Wire.beginTransmission(0x53);
+  Wire.write(0x00);
+  if (Wire.endTransmission() != 0) {
+    Serial.println("Ошибка: датчик не отвечает!");
+    while(1);
+  }
+  
+  // Включаем модуль
+  adxl.powerOn();
+}
+
+void loop() {
+  int x, y, z;
+  double xg, yg, zg;
+  double roll, pitch;
+  
+  // ===== РЕЖИМ УГЛОВ (+-2g) =====
+  // Устанавливаем диапазон измерений датчика
+  adxl.setRangeSetting(2);
+  // Читаем сырые значения c модуля 
+  adxl.readAccel(&x, &y, &z);
+  
+  // Преобразуем в g 
+  xg = x / 256.0;
+  yg = y / 256.0;
+  zg = z / 256.0;
+  
+  // Вычисляем углы
+  roll = atan2(yg, zg) * 180.0 / PI;
+  pitch = atan2(-xg, sqrt(yg*yg + zg*zg)) * 180.0 / PI;
+  
+  Serial.print("Roll: ");
+  Serial.print(roll, 1);
+  Serial.print("° Pitch: ");
+  Serial.print(pitch, 1);
+  Serial.print("° | ");
+  
+  // ===== РЕЖИМ УСКОРЕНИЙ (+-16g) =====
+  // Устанавливаем диапазон измерений датчика
+  adxl.setRangeSetting(16);
+  // Читаем сырые значения c модуля 
+  adxl.readAccel(&x, &y, &z);
+
+  // Преобразуем в g 
+  xg = x / 128.0;
+  yg = y / 128.0;
+  zg = z / 128.0;
+  
+  Serial.print("GX: ");
+  Serial.print(xg, 2);
+  Serial.print("g GY: ");
+  Serial.print(yg, 2);
+  Serial.print("g GZ: ");
+  Serial.print(zg, 2);
+  Serial.println("g");
+  
+  delay(10);
+}
