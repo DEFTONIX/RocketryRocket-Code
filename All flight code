@@ -1,0 +1,137 @@
+#include <Wire.h>
+#include <math.h>
+#include <DHT.h>
+#include <SdFat.h>
+#include <SparkFun_ADXL345.h>
+#include <Adafruit_BMP280.h>
+
+// ====== DHT11 ======
+#define DHTpin 4 
+#define DHTtype DHT11
+DHT dht(DHTpin,DHTtype);
+
+
+// ====== BMP280 ======
+Adafruit_BMP280 bmp; 
+
+// ====== ADXL345 ======
+ADXL345 adxl;
+
+// ADXL345 variables
+int x, y, z;
+double gx, gy, gz;
+double Gx, Gy, Gz;
+double roll, pitch;
+
+// ====== SD module ======
+#define SD_CS    5    
+#define SD_MOSI 23
+#define SD_MISO 19
+#define SD_SCLK 18
+SdFat SD; 
+
+// ====== TIMERS ======
+unsigned long prevDHT = 0;
+unsigned long prevBMP = 0;
+unsigned long prevADXL = 0;
+
+// ====== INTERVALS ======
+const unsigned long intervalDHT = 1000;
+const unsigned long intervalBMP = 50;
+const unsigned long intervalADXL = 20;
+
+
+void setup(){
+  Serial.begin(115200); 
+  Wire.begin(21, 22);
+
+  dht.begin(); 
+  bmp.begin(0x76); 
+  adxl.powerOn(); 
+  SD.begin(SdSpiConfig(SD_CS, DEDICATED_SPI, SD_SCK_MHZ(10))); 
+
+  delay(5000);
+}
+
+void loop(){
+  File myFile;
+  unsigned long currentMillis = millis(); // Saving current operating time
+  
+  // ====== DHT11 ======
+  if (currentMillis - prevDHT >= intervalDHT) {
+    prevDHT = currentMillis;
+    float humidity = dht.readHumidity();
+
+    //Writing to file
+    if (myFile.open("Humidity.txt", O_WRITE | O_CREAT | O_AT_END)) {
+      myFile.print(humidity);
+      myFile.println(" %RH");
+      myFile.close();
+    }
+  }
+
+    // ====== BMP280 ======
+  if (currentMillis - prevBMP >= intervalBMP) {
+    prevBMP = currentMillis;
+    float temp = bmp.readTemperature();
+    float pressure = bmp.readPressure() / 100;
+
+    //Writing to files
+    if (myFile.open("Temperature.txt", O_WRITE | O_CREAT | O_AT_END)) {
+      myFile.print(temp);
+      myFile.println(" *C");
+      myFile.close();
+    }
+    if (myFile.open("Pressure.txt", O_WRITE | O_CREAT | O_AT_END)) {
+      myFile.print(pressure);
+      myFile.println(" hPa");
+      myFile.close();
+    }
+  }
+
+  // ====== ADXL345 ======
+  if (currentMillis - prevADXL >= intervalADXL) {
+    prevADXL = currentMillis;
+
+    // === ANGLE MODE (+-2g) ===
+    adxl.setRangeSetting(2); 
+    adxl.readAccel(&x, &y, &z); 
+    gx = x / 256.0;
+    gy = y / 256.0;
+    gz = z / 256.0;
+  
+    // Calculating angles
+    roll = atan2(gy, gz) * 180.0 / PI;
+    pitch = atan2(-gx, sqrt(gy*gy + gz*gz)) * 180.0 / PI;
+  
+    // === ACCELERATION MODE (+-16g) ===
+    adxl.setRangeSetting(16); 
+    adxl.readAccel(&x, &y, &z); 
+    Gx = x / 128.0;
+    Gy = y / 128.0;
+    Gz = z / 128.0;  
+
+    //Writing to files
+    if (myFile.open("Tilt angles.txt", O_WRITE | O_CREAT | O_AT_END)) {
+      myFile.print("Roll: ");
+      myFile.print(roll);
+      myFile.print("* Pitch: ");
+      myFile.print(pitch);
+      myFile.println("*");
+      myFile.close();
+    }
+    
+    if (myFile.open("Acceleration.txt", O_WRITE | O_CREAT | O_AT_END)) {
+      myFile.print("X: ");
+      myFile.print(Gx);
+      myFile.print("g Y: ");
+      myFile.print(Gy);
+      myFile.print("g Z: ");
+      myFile.print(Gz);
+      myFile.println("g");
+      myFile.close();
+    }
+  }
+
+  delay(10);
+}
